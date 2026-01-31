@@ -495,35 +495,106 @@
     </section>
 
     <section class="card player" id="watch" aria-label="Video player">
-      <div class="playerTop">
-        <div>
-          <h2>Watch</h2>
-          <p class="note">
-            Use a video URL you control or have permission to stream. Some hosts block playback unless they allow cross-origin video (CORS).
-          </p>
-        </div>
-      </div>
+  <div class="playerTop">
+    <div>
+      <h2>Watch</h2>
+      <p class="note">
+        Use a video URL you control or have permission to stream. Some hosts block playback unless they allow cross-origin video (CORS).
+      </p>
+    </div>
+  </div>
 
-      <div class="controls">
-        <div class="field">
-          <label for="videoUrl">Video URL</label>
-          <input id="videoUrl" type="url" placeholder="https://thereturn.sfo3.cdn.digitaloceanspaces.com/The.Mask.of.Zorro.1998.REMASTERED.1080p.BluRay.x264-ESub.Hollymoviehd.mp4" autocomplete="off" />
-        </div>
+  <div class="controls">
+    <div class="field">
+      <label for="videoUrl">Video URL</label>
+      <input
+        id="videoUrl"
+        type="url"
+        autocomplete="off"
+      />
+    </div>
 
-        <div class="btnrow">
-          <button class="primary" id="loadBtn" type="button">Load</button>
-          <button id="playBtn" type="button">Play</button>
-          <button id="clearBtn" type="button">Clear</button>
-        </div>
-      </div>
+    <div class="btnrow">
+      <button class="primary" id="loadBtn" type="button">Load</button>
+      <button id="playBtn" type="button">Play</button>
+      <button id="clearBtn" type="button">Clear</button>
+    </div>
+  </div>
 
-      <div class="videoWrap">
-        <video id="player" controls playsinline preload="metadata">
-          Sorry, your browser does not support the video tag.
-        </video>
-        <div class="status" id="status"></div>
-      </div>
-    </section>
+  <div class="videoWrap">
+    <video id="player" controls playsinline preload="metadata">
+      Sorry, your browser does not support the video tag.
+    </video>
+    <div class="status" id="status"></div>
+  </div>
+</section>
+
+<script>
+  const DEFAULT_URL =
+    "https://thereturn.sfo3.cdn.digitaloceanspaces.com/The.Mask.of.Zorro.1998.REMASTERED.1080p.BluRay.x264-ESub.Hollymoviehd.mp4";
+
+  const videoUrl = document.getElementById("videoUrl");
+  const player = document.getElementById("player");
+  const statusEl = document.getElementById("status");
+  const loadBtn = document.getElementById("loadBtn");
+  const playBtn = document.getElementById("playBtn");
+  const clearBtn = document.getElementById("clearBtn");
+
+  // Put your link into the field by default.
+  videoUrl.value = DEFAULT_URL;
+
+  function setStatus(msg) {
+    statusEl.textContent = msg || "";
+  }
+
+  function loadVideo(url) {
+    const clean = (url || "").trim();
+    if (!clean) {
+      setStatus("Missing video URL.");
+      return false;
+    }
+
+    // Only reset src if it changed.
+    if (player.currentSrc !== clean && player.src !== clean) {
+      player.src = clean;
+    }
+
+    // Force the browser to (re)load metadata.
+    player.load();
+    setStatus("Loaded.");
+    return true;
+  }
+
+  loadBtn.addEventListener("click", () => {
+    loadVideo(videoUrl.value);
+  });
+
+  // This is the key: Play click loads (if needed) and immediately plays.
+  playBtn.addEventListener("click", async () => {
+    setStatus("Loading…");
+
+    const ok = loadVideo(videoUrl.value);
+    if (!ok) return;
+
+    try {
+      await player.play(); // user click counts as a gesture, so autoplay policies allow this
+      setStatus("");
+    } catch (err) {
+      // Common causes: CORS blocked, unsupported codec, or browser policy
+      setStatus("Could not play. Likely CORS, unsupported format, or blocked by the host.");
+      console.error(err);
+    }
+  });
+
+  clearBtn.addEventListener("click", () => {
+    player.pause();
+    player.removeAttribute("src"); // clears the current source
+    player.load();                 // resets the element
+    setStatus("Cleared.");
+    videoUrl.value = DEFAULT_URL;  // optional: keep your default link ready
+  });
+</script>
+
 
     <footer>
       Tip: if you host this on GitHub Pages or a simple static host, keep the movie file on a server that allows direct playback.
